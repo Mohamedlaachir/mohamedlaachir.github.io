@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naval Shop - Ropa Urbana desde Navalcarnero</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .banner {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            background-image: url('https://thumbs.dreamstime.com/b/abstract-dark-blue-background-light-neon-waves-futuristic-glowing-wallpaper-electric-energy-motion-vibrant-radiant-techno-384803367.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            overflow: hidden;
+        }
+        .banner::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 10, 30, 0.5);
+            z-index: 1;
+        }
+        .sneaker {
+            position: absolute;
+            width: 55%;
+            max-width: 650px;
+            z-index: 2;
+            animation: float 7s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.6));
+        }
+        @keyframes float {
+            0% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-25px) rotate(5deg); }
+            100% { transform: translateY(0) rotate(-5deg); }
+        }
+        .banner-content {
+            position: relative;
+            z-index: 3;
+        }
+        .banner h1 {
+            font-size: 5.5em;
+            margin: 20px 0;
+            text-shadow: 0 0 15px #00ffff, 4px 4px 10px black;
+        }
+        .banner p {
+            font-size: 2.2em;
+            margin: 10px 0;
+            text-shadow: 0 0 10px #00ffff, 3px 3px 8px black;
+        }
+        .admin-bar {
+            background-color: #001f3f;
+            padding: 10px;
+            text-align: right;
+        }
+        .add-button {
+            background-color: #00ffff;
+            color: #001f3f;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .add-button:hover {
+            background-color: #00cccc;
+        }
+        nav {
+            background-color: #001f3f;
+            padding: 15px;
+            text-align: center;
+        }
+        nav a {
+            color: white;
+            margin: 0 20px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        nav a:hover {
+            text-decoration: underline;
+            color: #00ffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        .product {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .product:hover {
+            transform: translateY(-10px);
+        }
+        .product img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+        .product h3 {
+            margin: 15px 0 10px;
+            color: #001f3f;
+        }
+        .product p.price {
+            font-weight: bold;
+            font-size: 1.4em;
+            color: #001f3f;
+        }
+        .buy-button {
+            background-color: #001f3f;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+        .buy-button:hover {
+            background-color: #002b55;
+        }
+        footer {
+            background-color: #001f3f;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Simulación de login (solo para demo) -->
+    <script>
+        // Cambia este correo para probar: "admin@navalshop.com" = modo admin
+        const userEmail = prompt("Introduce tu correo para entrar en Naval Shop:") || "";
+        const isAdmin = userEmail.toLowerCase() === "admin@navalshop.com";
+    </script>
+
+    <div class="admin-bar">
+        <script>
+            if (isAdmin) {
+                document.write('<button class="add-button" onclick="openModal()">+ Añadir artículo</button>');
+            }
+        </script>
+    </div>
+
+    <div class="banner">
+        <img src="https://cdn.runrepeat.com/storage/gallery/buying_guide_primary/214/214-best-chunky-sneakers-001-16187842-main.jpg" alt="Zapatilla Chunky Trendy 2025" class="sneaker">
+        <div class="banner-content">
+            <h1>NAVAL SHOP</h1>
+            <p>Zapatillas y ropa urbana con flow</p>
+            <p>Desde Navalcarnero ✦</p>
+        </div>
+    </div>
+
+    <nav>
+        <a href="#">Inicio</a>
+        <a href="#">Zapatillas</a>
+        <a href="#">Camisetas</a>
+        <a href="#">Sudaderas</a>
+        <a href="#">Pantalones</a>
+        <a href="#">Contacto</a>
+        <a href="#">Carrito</a>
+    </nav>
+
+    <div class="container" id="products-container">
+        <!-- Los productos se cargarán aquí con JavaScript -->
+    </div>
+
+    <!-- Modal para añadir artículo -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Añadir nuevo artículo</h2>
+            <input type="text" id="nombre" placeholder="Nombre del artículo (ej: Zapatillas Chunky Blancas)">
+            <input type="text" id="descripcion" placeholder="Descripción breve">
+            <input type="number" id="precio" placeholder="Precio (€)" step="0.01">
+            <input type="text" id="color" placeholder="Color (ej: Blanco/Negro)">
+            <input type="text" id="tallas" placeholder="Tallas disponibles (ej: 38,39,40,41,42)">
+            <input type="number" id="stock" placeholder="Unidades en stock">
+            <input type="text" id="imagen" placeholder="URL de la imagen">
+            <button onclick="addProduct()">Añadir artículo</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 Naval Shop – Navalcarnero, Madrid. Stay fresh.</p>
+    </footer>
+
+    <script>
+        // Array inicial de productos (puedes añadir más)
+        let products = [
+            {
+                nombre: "Chunky Sneakers Elevated Sole",
+                descripcion: "Zapatillas tendencia 2025 con suela gruesa",
+                precio: 99.99,
+                color: "Blanco",
+                tallas: "38-44",
+                stock: 15,
+                imagen: "https://cdn.runrepeat.com/storage/gallery/buying_guide_primary/214/214-best-chunky-sneakers-001-16187842-main.jpg"
+            },
+            {
+                nombre: "Camiseta Oversize Street",
+                descripcion: "Camiseta algodón premium",
+                precio: 34.99,
+                color: "Negro",
+                tallas: "S,M,L,XL",
+                stock: 30,
+                imagen: "https://m.media-amazon.com/images/I/5199IuuvBfL._AC_UY350_.jpg"
+            }
+        ];
+
+        // Cargar productos guardados en localStorage (si existen)
+        if (localStorage.getItem("navalProducts")) {
+            products = JSON.parse(localStorage.getItem("navalProducts"));
+        }
+
+        function renderProducts() {
+            const container = document.getElementById("products-container");
+            container.innerHTML = "";
+            products.forEach(product => {
+                const div = document.createElement("div");
+                div.className = "product";
+                div.innerHTML = `
+                    <img src="${product.imagen}" alt="${product.nombre}">
+                    <h3>${product.nombre}</h3>
+                    <p>${product.descripcion}</p>
+                    <p><strong>Color:</strong> ${product.color}</p>
+                    <p><strong>Tallas:</strong> ${product.tallas}</p>
+                    <p><strong>Stock:</strong> ${product.stock} unidades</p>
+                    <p class="price">${product.precio.toFixed(2)} €</p>
+                    <button class="buy-button">Añadir al carrito</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openModal() {
+            document.getElementById("addModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("addModal").style.display = "none";
+        }
+
+        function addProduct() {
+            const nombre = document.getElementById("nombre").value;
+            const descripcion = document.getElementById("descripcion").value;
+            const precio = parseFloat(document.getElementById("precio").value);
+            const color = document.getElementById("color").value;
+            const tallas = document.getElementById("tallas").value;
+            const stock = parseInt(document.getElementById("stock").value);
+            const imagen = document.getElementById("imagen").value || "https://via.placeholder.com/300x300?text=Nueva+Zapatilla";
+
+            if (nombre && precio && color && tallas && stock >= 0) {
+                products.push({ nombre, descripcion, precio, color, tallas, stock, imagen });
+                localStorage.setItem("navalProducts", JSON.stringify(products));
+                renderProducts();
+                closeModal();
+                // Limpiar formulario
+                document.querySelectorAll("#addModal input").forEach(input => input.value = "");
+            } else {
+                alert("Por favor, completa todos los campos obligatorios.");
+            }
+        }
+
+        // Cerrar modal al hacer click fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById("addModal");
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Render inicial
+        renderProducts();
+    </script>
+</body>
+</html>
