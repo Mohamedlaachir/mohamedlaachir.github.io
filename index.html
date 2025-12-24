@@ -95,24 +95,28 @@
     </footer>
 
     <script>
-        let products = JSON.parse(localStorage.getItem("navalProducts")) || [
-            // Productos de ejemplo ROPA
-            { nombre: "Chunky Platform White", descripcion: "Zapatillas suela elevada ultra trendy", precio: 119.99, color: "Blanco", tallas: "36-44", stock: 25, imagen: "https://m.media-amazon.com/images/I/61Qfd1HYC2L._AC_UY900_.jpg", categoria: "ropa" },
-            { nombre: "Oversized Black Hoodie", descripcion: "Sudadera relaxed fit", precio: 64.99, color: "Negro", tallas: "S-XXL", stock: 30, imagen: "https://m.media-amazon.com/images/I/81f0l4c3kEL._AC_UY900_.jpg", categoria: "ropa" },
-            { nombre: "Baggy Cargo Jeans", descripcion: "Pantalones cargo relaxed", precio: 79.99, color: "Beige", tallas: "28-38", stock: 20, imagen: "https://m.media-amazon.com/images/I/71tZO9Z8dQL._AC_UY900_.jpg", categoria: "ropa" },
-            { nombre: "Graphic Street Tee", descripcion: "Camiseta estampada streetwear", precio: 34.99, color: "Gris", tallas: "S-XL", stock: 40, imagen: "https://m.media-amazon.com/images/I/71eWou0r5wL._AC_UY900_.jpg", categoria: "ropa" },
+        let products = JSON.parse(localStorage.getItem("navalProducts")) || [];
 
-            // Productos de ejemplo FESTIVIDAD (Navidad)
-            { nombre: "Christmas Chunky Red", descripcion: "Zapatillas edición Navidad roja", precio: 129.99, color: "Rojo/Verde", tallas: "36-44", stock: 15, imagen: "https://m.media-amazon.com/images/I/71nN1nX0gFL._AC_UY900_.jpg", categoria: "festividad" },
-            { nombre: "Reindeer Hoodie", descripcion: "Sudadera con renos y luces", precio: 69.99, color: "Verde Navidad", tallas: "S-XXL", stock: 20, imagen: "https://m.media-amazon.com/images/I/81Qd9a7zQvL._AC_UY900_.jpg", categoria: "festividad" },
-            { nombre: "Santa Beanie", descripcion: "Gorro navideño con pompón", precio: 24.99, color: "Rojo/Blanco", tallas: "Única", stock: 50, imagen: "https://m.media-amazon.com/images/I/71v2t2q3QZL._AC_UY900_.jpg", categoria: "festividad" },
-            { nombre: "Festive Socks Pack", descripcion: "Pack 3 calcetines Navidad", precio: 19.99, color: "Multicolor", tallas: "38-44", stock: 35, imagen: "https://m.media-amazon.com/images/I/81z5X3pA3LL._AC_UY900_.jpg", categoria: "festividad" }
-        ];
+        // Solo añade productos de ejemplo si no hay ninguno guardado
+        if (products.length === 0) {
+            products = [
+                // ROPA
+                { nombre: "Chunky Platform White", descripcion: "Zapatillas suela elevada ultra trendy", precio: 119.99, color: "Blanco", tallas: "36-44", stock: 25, imagen: "https://m.media-amazon.com/images/I/61Qfd1HYC2L._AC_UY900_.jpg", categoria: "ropa" },
+                { nombre: "Oversized Black Hoodie", descripcion: "Sudadera relaxed fit", precio: 64.99, color: "Negro", tallas: "S-XXL", stock: 30, imagen: "https://m.media-amazon.com/images/I/81f0l4c3kEL._AC_UY900_.jpg", categoria: "ropa" },
+                { nombre: "Baggy Cargo Jeans", descripcion: "Pantalones cargo relaxed", precio: 79.99, color: "Beige", tallas: "28-38", stock: 20, imagen: "https://m.media-amazon.com/images/I/71tZO9Z8dQL._AC_UY900_.jpg", categoria: "ropa" },
+                { nombre: "Graphic Street Tee", descripcion: "Camiseta estampada streetwear", precio: 34.99, color: "Gris", tallas: "S-XL", stock: 40, imagen: "https://m.media-amazon.com/images/I/71eWou0r5wL._AC_UY900_.jpg", categoria: "ropa" },
 
-        localStorage.setItem("navalProducts", JSON.stringify(products)); // Para que se guarden los ejemplos si no hay nada
+                // FESTIVIDAD (Navidad)
+                { nombre: "Christmas Chunky Red", descripcion: "Zapatillas edición Navidad roja", precio: 129.99, color: "Rojo/Verde", tallas: "36-44", stock: 15, imagen: "https://m.media-amazon.com/images/I/71nN1nX0gFL._AC_UY900_.jpg", categoria: "festividad" },
+                { nombre: "Reindeer Hoodie", descripcion: "Sudadera con renos y luces", precio: 69.99, color: "Verde Navidad", tallas: "S-XXL", stock: 20, imagen: "https://m.media-amazon.com/images/I/81Qd9a7zQvL._AC_UY900_.jpg", categoria: "festividad" },
+                { nombre: "Santa Beanie", descripcion: "Gorro navideño con pompón", precio: 24.99, color: "Rojo/Blanco", tallas: "Única", stock: 50, imagen: "https://m.media-amazon.com/images/I/71v2t2q3QZL._AC_UY900_.jpg", categoria: "festividad" },
+                { nombre: "Festive Socks Pack", descripcion: "Pack 3 calcetines Navidad", precio: 19.99, color: "Multicolor", tallas: "38-44", stock: 35, imagen: "https://m.media-amazon.com/images/I/81z5X3pA3LL._AC_UY900_.jpg", categoria: "festividad" }
+            ];
+            localStorage.setItem("navalProducts", JSON.stringify(products));
+        }
 
         function updateCartCount() {
-            document.getElementById("cart-count").textContent = cart.length;
+            document.getElementById("cart-count").innerText = cart.length;
         }
 
         function renderProducts() {
@@ -125,7 +129,7 @@
             else if (currentSection === 'carrito') filtered = cart;
 
             filtered.forEach((product, index) => {
-                const realIndex = currentSection === 'carrito' ? products.findIndex(p => p === product) : index;
+                const realIndex = (currentSection === 'carrito') ? products.findIndex(p => p.nombre === product.nombre && p.precio === product.precio) : index;
                 const div = document.createElement("div");
                 div.className = "product";
                 div.innerHTML = `
@@ -137,7 +141,7 @@
                     <p><strong>Tallas:</strong> ${product.tallas}</p>
                     <p><strong>Stock:</strong> ${product.stock} unidades</p>
                     <p class="price">${product.precio.toFixed(2)} €</p>
-                    ${currentSection !== 'carrito' ? `<button class="buy-button" onclick="addToCart(${realIndex})">Añadir al carrito</button>` : ''}
+                    ${currentSection !== 'carrito' ? `<button class="buy-button" onclick="addToCart(${realIndex})">Añadir al carrito</button>` : '<p style="color:green;font-weight:bold;">En el carrito</p>'}
                 `;
                 container.appendChild(div);
             });
@@ -150,7 +154,8 @@
         }
 
         function addToCart(index) {
-            cart.push(products[index]);
+            const product = products[index];
+            cart.push({...product}); // Copia para evitar referencias
             localStorage.setItem("navalCart", JSON.stringify(cart));
             alert("¡Añadido al carrito!");
             updateCartCount();
