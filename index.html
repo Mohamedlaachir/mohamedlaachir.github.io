@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Naval Shop</title>
+    <title>Naval Shop - Ropa Urbana desde Navalcarnero</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; background: #0a1f3f; color: #fff; font-family: Arial, sans-serif; }
-        .banner { height: 80vh; background: url('https://wallpapercave.com/wp/wp6981370.jpg') center/cover; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; }
+        .banner { height: 80vh; background: url('https://www.shutterstock.com/image-illustration/sci-fi-futuristic-cyber-retro-260nw-2602914111.jpg') center/cover; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; }
         .banner::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,20,60,0.8), rgba(0,100,200,0.6)); }
         .banner h1 { font-family: 'Cinzel', serif; font-size: 7em; color: #00ffff; text-shadow: 0 0 30px #00ffff; margin: 0; position: relative; }
         .banner p { font-family: 'Orbitron', sans-serif; font-size: 2.5em; color: #ff00ff; text-shadow: 0 0 20px #ff00ff; position: relative; }
-        nav { background: #001f3f; padding: 20px; text-align: center; }
+        .admin-bar { position: fixed; top: 0; right: 0; background: rgba(0,0,0,0.5); padding: 10px; z-index: 1000; }
+        .add-button { background: #00ffff; color: #001f3f; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        nav { background: #001f3f; padding: 20px; text-align: center; margin-top: 60px; }
         nav a { color: #fff; margin: 0 30px; font-size: 1.3em; cursor: pointer; text-decoration: none; }
         nav a:hover { color: #00ffff; }
         .container { max-width: 1200px; margin: 40px auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; padding: 20px; }
-        .product { background: rgba(255,255,255,0.95); color: #333; padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .product { position: relative; background: rgba(255,255,255,0.95); color: #333; padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); transition: 0.3s; }
+        .product:hover { transform: translateY(-15px); }
         .product img { max-width: 100%; border-radius: 10px; }
         .product h3 { color: #001f3f; }
         .product .price { font-size: 1.6em; color: #ff0000; font-weight: bold; }
         .buy-button { background: #001f3f; color: #fff; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; }
-        .admin-bar { position: fixed; top: 0; right: 0; background: rgba(0,0,0,0.5); padding: 10px; z-index: 1000; }
-        .add-button { background: #00ffff; color: #001f3f; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        .buy-button:hover { background: #00ffff; color: #001f3f; }
+        .edit-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; cursor: pointer; font-size: 1.8em; color: #ff9500; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
+        .modal-content { background: white; color: #333; padding: 30px; border-radius: 15px; width: 90%; max-width: 550px; }
+        .close { float: right; font-size: 32px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -34,45 +40,137 @@
     <div class="admin-bar" id="adminBar"></div>
 
     <nav>
-        <a onclick="showSection('all')">Inicio</a>
-        <a onclick="showSection('ropa')">Ropa</a>
-        <a onclick="showSection('festividad')">Festividades</a>
-        <a onclick="showSection('carrito')">Carrito</a>
+        <a onclick="changeSection('inicio')">Inicio</a>
+        <a onclick="changeSection('ropa')">Ropa</a>
+        <a onclick="changeSection('festividades')">Festividades</a>
+        <a onclick="changeSection('carrito')">Carrito (<span id="cart-count">0</span>)</a>
     </nav>
 
-    <div class="container" id="container"></div>
+    <div class="container" id="products-container"></div>
+
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">×</span>
+            <h2 id="modalTitle">Añadir artículo</h2>
+            <input type="hidden" id="editIndex" value="-1">
+            <input type="text" id="nombre" placeholder="Nombre">
+            <input type="number" id="precio" placeholder="Precio (€)" step="0.01">
+            <input type="text" id="imagen" placeholder="URL imagen">
+            <select id="categoria">
+                <option value="ropa">Ropa</option>
+                <option value="festividad">Festividad</option>
+            </select>
+            <button onclick="saveProduct()">Guardar</button>
+            <button id="deleteBtn" style="display:none; background:red;" onclick="deleteProduct()">Eliminar</button>
+        </div>
+    </div>
 
     <script>
-        const isAdmin = prompt("Correo para Naval Shop:")?.toLowerCase() === "admin@navalshop.com";
-        if (isAdmin) document.getElementById("adminBar").innerHTML = '<button class="add-button" onclick="addProduct()">+ Añadir artículo</button>';
+        const userEmail = prompt("Introduce tu correo:") || "";
+        const isAdmin = userEmail.toLowerCase() === "admin@navalshop.com";
+        let currentSection = 'inicio';
+        let cart = [];
+
+        if (isAdmin) document.getElementById("adminBar").innerHTML = '<button class="add-button" onclick="openModal(-1)">+ Añadir artículo</button>';
 
         let products = [
-            { name: "Chunky White", price: 119.99, img: "https://m.media-amazon.com/images/I/61Qfd1HYC2L._AC_UY900_.jpg", cat: "ropa" },
-            { name: "Black Hoodie", price: 64.99, img: "https://m.media-amazon.com/images/I/81f0l4c3kEL._AC_UY900_.jpg", cat: "ropa" },
-            { name: "Cargo Jeans", price: 79.99, img: "https://m.media-amazon.com/images/I/71tZO9Z8dQL._AC_UY900_.jpg", cat: "ropa" },
-            { name: "Street Tee", price: 34.99, img: "https://m.media-amazon.com/images/I/71eWou0r5wL._AC_UY900_.jpg", cat: "ropa" },
-            { name: "Christmas Chunky", price: 129.99, img: "https://m.media-amazon.com/images/I/71nN1nX0gFL._AC_UY900_.jpg", cat: "festividad" },
-            { name: "Reindeer Hoodie", price: 69.99, img: "https://m.media-amazon.com/images/I/81Qd9a7zQvL._AC_UY900_.jpg", cat: "festividad" },
-            { name: "Santa Beanie", price: 24.99, img: "https://m.media-amazon.com/images/I/71v2t2q3QZL._AC_UY900_.jpg", cat: "festividad" },
-            { name: "Festive Socks", price: 19.99, img: "https://m.media-amazon.com/images/I/81z5X3pA3LL._AC_UY900_.jpg", cat: "festividad" }
+            { nombre: "Chunky White", precio: 119.99, imagen: "https://m.media-amazon.com/images/I/61Qfd1HYC2L._AC_UY900_.jpg", categoria: "ropa" },
+            { nombre: "Black Hoodie", precio: 64.99, imagen: "https://m.media-amazon.com/images/I/81f0l4c3kEL._AC_UY900_.jpg", categoria: "ropa" },
+            { nombre: "Cargo Jeans", precio: 79.99, imagen: "https://m.media-amazon.com/images/I/71tZO9Z8dQL._AC_UY900_.jpg", categoria: "ropa" },
+            { nombre: "Street Tee", precio: 34.99, imagen: "https://m.media-amazon.com/images/I/71eWou0r5wL._AC_UY900_.jpg", categoria: "ropa" },
+            { nombre: "Christmas Chunky", precio: 129.99, imagen: "https://cdn.sanity.io/images/d6wcctii/production/fc623b44425c46370d24587c0d95a1d34638deb3-1070x760.png", categoria: "festividad" },
+            { nombre: "Reindeer Hoodie", precio: 69.99, imagen: "https://i.ebayimg.com/thumbs/images/g/JEwAAOSw5JNnuo8C/s-l1200.webp", categoria: "festividad" },
+            { nombre: "Santa Beanie", precio: 24.99, imagen: "https://images.soleretriever.com/blog/f0c7c18cb7499b068859c1dc7f9b6f203aa86cb9-1070x760.jpg", categoria: "festividad" },
+            { nombre: "Festive Socks", precio: 19.99, imagen: "https://images.soleretriever.com/blog/56c19df2720504532855b5cdfaa2866be862b6f6-1070x760.jpg", categoria: "festividad" }
         ];
 
-        function showSection(filter) {
-            const cont = document.getElementById("container");
-            cont.innerHTML = "";
-            const filtered = filter === 'all' ? products : products.filter(p => p.cat === filter);
-            filtered.forEach(p => {
-                cont.innerHTML += `
+        function renderProducts() {
+            const container = document.getElementById("products-container");
+            container.innerHTML = "";
+            let filtered = currentSection === 'inicio' ? products : products.filter(p => p.categoria === currentSection);
+            if (currentSection === 'carrito') filtered = cart;
+
+            filtered.forEach((p, i) => {
+                const realI = currentSection === 'carrito' ? products.findIndex(pr => pr.nombre === p.nombre) : i;
+                container.innerHTML += `
                     <div class="product">
-                        <img src="${p.img}" alt="${p.name}">
-                        <h3>${p.name}</h3>
-                        <p class="price">${p.price.toFixed(2)} €</p>
-                        <button class="buy-button">Añadir al carrito</button>
+                        ${isAdmin && currentSection !== 'carrito' ? `<button class="edit-btn" onclick="openModal(${realI})">✏️</button>` : ''}
+                        <img src="${p.imagen}" alt="${p.nombre}">
+                        <h3>${p.nombre}</h3>
+                        <p class="price">${p.precio.toFixed(2)} €</p>
+                        ${currentSection !== 'carrito' ? `<button class="buy-button" onclick="addToCart(${realI})">Añadir al carrito</button>` : ''}
                     </div>`;
             });
+            document.getElementById("cart-count").innerText = cart.length;
         }
 
-        showSection('all');
+        function changeSection(sec) {
+            currentSection = sec;
+            renderProducts();
+        }
+
+        function addToCart(i) {
+            cart.push(products[i]);
+            alert("Añadido!");
+            document.getElementById("cart-count").innerText = cart.length;
+            if (currentSection === 'carrito') renderProducts();
+        }
+
+        function openModal(i) {
+            document.getElementById("editIndex").value = i;
+            if (i === -1) {
+                document.getElementById("modalTitle").textContent = "Añadir artículo";
+                document.getElementById("deleteBtn").style.display = "none";
+                document.getElementById("nombre").value = "";
+                document.getElementById("precio").value = "";
+                document.getElementById("imagen").value = "";
+                document.getElementById("categoria").value = "ropa";
+            } else {
+                const p = products[i];
+                document.getElementById("modalTitle").textContent = "Editar artículo";
+                document.getElementById("nombre").value = p.nombre;
+                document.getElementById("precio").value = p.precio;
+                document.getElementById("imagen").value = p.imagen;
+                document.getElementById("categoria").value = p.categoria;
+                document.getElementById("deleteBtn").style.display = "block";
+            }
+            document.getElementById("addModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("addModal").style.display = "none";
+        }
+
+        function saveProduct() {
+            const i = parseInt(document.getElementById("editIndex").value);
+            const nombre = document.getElementById("nombre").value.trim();
+            const precio = parseFloat(document.getElementById("precio").value);
+            const imagen = document.getElementById("imagen").value.trim();
+            const categoria = document.getElementById("categoria").value;
+
+            if (!nombre || isNaN(precio) || !imagen || !categoria) {
+                alert("Rellena todos los campos");
+                return;
+            }
+
+            const p = { nombre, precio, imagen, categoria };
+            if (i === -1) products.push(p);
+            else products[i] = p;
+
+            renderProducts();
+            closeModal();
+        }
+
+        function deleteProduct() {
+            if (confirm("¿Eliminar?")) {
+                const i = parseInt(document.getElementById("editIndex").value);
+                products.splice(i, 1);
+                renderProducts();
+                closeModal();
+            }
+        }
+
+        renderProducts();
     </script>
 </body>
 </html>
