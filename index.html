@@ -15,10 +15,20 @@
     p { font-size: 2em; margin: 10px; letter-spacing: 3px; }
     .btn { padding: 15px 40px; font-size: 1.3em; background: cyan; color: black; border: none; border-radius: 50px; cursor: pointer; margin-top: 30px; font-weight: bold; }
     
-    .product { border: 1px solid #333; padding: 15px; margin: 10px; text-align: center; border-radius: 10px; background: #111; }
+    .product { 
+      border: 1px solid #333; padding: 15px; margin: 15px; width: 280px; 
+      text-align: center; border-radius: 12px; background: #111; position: relative;
+    }
+    .edit-btn, .delete-btn {
+      position: absolute; top: 10px; background: rgba(0,0,0,0.8); color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 5px;
+    }
+    .edit-btn { right: 50px; }
+    .delete-btn { right: 10px; background: #ff4444; }
+    
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; }
-    .modal-content { background: #111; width: 90%; max-width: 500px; margin: 80px auto; padding: 25px; border-radius: 15px; }
-    input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: none; color: white; border-radius: 8px; }
+    .modal-content { background: #111; width: 90%; max-width: 500px; margin: 60px auto; padding: 25px; border-radius: 15px; }
+    input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: none; color: white; border-radius: 8px; }
+    .admin-bar { background: #001f3f; padding: 10px; text-align: center; }
   </style>
 </head>
 <body>
@@ -30,6 +40,8 @@
     <button class="btn" onclick="changeSection('tienda')">VER COLECCIÓN</button>
   </div>
 
+  <div class="admin-bar" id="adminBar"></div>
+
   <div style="text-align:center; padding:20px;">
     <button onclick="changeSection('tienda')">Tienda</button>
     <button onclick="changeSection('carrito')">Carrito (<span id="cart-count">0</span>)</button>
@@ -37,18 +49,29 @@
 
   <div id="products-container" style="display:flex; flex-wrap:wrap; justify-content:center; padding:20px;"></div>
 
-  <!-- Modal Formulario de Compra -->
+  <!-- Modal Añadir/Editar Producto (Admin) -->
+  <div id="adminModal" class="modal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Añadir Producto</h2>
+      <input type="text" id="prodNombre" placeholder="Nombre del producto">
+      <input type="number" id="prodPrecio" placeholder="Precio (€)" step="0.01">
+      <input type="text" id="prodImagen" placeholder="URL de la imagen">
+      <input type="text" id="prodCategoria" placeholder="Categoría (ropa, zapatos, etc)">
+      <button onclick="saveProduct()" style="background:cyan; color:black; padding:12px 30px;">Guardar Producto</button>
+      <button onclick="closeAdminModal()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Modal Formulario Cliente -->
   <div id="purchaseModal" class="modal">
     <div class="modal-content">
       <h2>Finalizar Compra</h2>
       <p id="selectedProductInfo"></p>
-      
       <input type="text" id="customerName" placeholder="Nombre completo" required>
       <input type="email" id="customerEmail" placeholder="Correo electrónico" required>
       <textarea id="customerMessage" placeholder="Talla, dirección, comentarios..." rows="4"></textarea>
-      
-      <button onclick="submitPurchase()" style="background:cyan; color:black; padding:12px 30px; margin:10px 5px;">Enviar Pedido</button>
-      <button onclick="closeModal()" style="padding:12px 30px;">Cancelar</button>
+      <button onclick="submitPurchase()" style="background:cyan; color:black; padding:12px 30px;">Enviar Pedido</button>
+      <button onclick="closePurchaseModal()">Cancelar</button>
     </div>
   </div>
 
@@ -56,11 +79,11 @@
   let isAdmin = false;
   const adminEmail = "laachir@navalshp.com";
   let cart = [];
-  let currentProductIndex = -1;
+  let products = [];
+  let editingIndex = -1;
 
-  // Pedir correo al entrar
-  let userEmail = prompt("🔑 Introduce tu correo electrónico para acceder a Naval Shop:");
-  
+  // Login obligatorio
+  let userEmail = prompt("🔑 Introduce tu correo electrónico para acceder:");
   if (!userEmail || userEmail.trim() === "") {
     alert("Debes introducir un correo para entrar.");
     window.location.reload();
@@ -68,58 +91,124 @@
     isAdmin = true;
     alert("✅ Acceso de Administrador concedido");
   } else {
-    alert("✅ Acceso correcto. Bienvenido a Naval Shop");
+    alert("✅ Acceso correcto");
   }
 
-  let products = [];   // Tienda vacía
+  // Mostrar botón Admin
+  if (isAdmin) {
+    document.getElementById("adminBar").innerHTML = `<button onclick="openAdminModal(-1)" style="padding:12px 25px; font-size:1.1em;">+ Añadir Nuevo Producto</button>`;
+  }
 
   function renderProducts() {
     const container = document.getElementById("products-container");
-    container.innerHTML = "<h2 style='width:100%; text-align:center;'>Próximamente nuevos productos...</h2>";
+    container.innerHTML = "";
+
+    if (products.length === 0) {
+      container.innerHTML = "<h2 style='width:100%; text-align:center; color:#aaa;'>No hay productos todavía.<br>Los administradores pueden añadir productos.</h2>";
+      return;
+    }
+
+    products.forEach((p, i) => {
+      const div = document.createElement("div");
+      div.className = "product";
+      div.innerHTML = `
+        ${isAdmin ? `<button class="edit-btn" onclick="openAdminModal(${i})">✏️</button>
+                     <button class="delete-btn" onclick="deleteProduct(${i})">🗑</button>` : ''}
+        <img src="${p.imagen || 'https://via.placeholder.com/300'}" alt="${p.nombre}" style="width:100%; height:220px; object-fit:cover; border-radius:8px;">
+        <h3>${p.nombre}</h3>
+        <p class="price" style="color:cyan; font-size:1.4em;">${p.precio.toFixed(2)} €</p>
+        <button class="btn" onclick="openPurchaseForm(${i})" style="padding:10px 25px; font-size:1em;">Comprar Ahora</button>
+      `;
+      container.appendChild(div);
+    });
     document.getElementById("cart-count").innerText = cart.length;
   }
 
+  function openAdminModal(index) {
+    editingIndex = index;
+    if (index === -1) {
+      document.getElementById("modalTitle").textContent = "Añadir Nuevo Producto";
+      document.getElementById("prodNombre").value = "";
+      document.getElementById("prodPrecio").value = "";
+      document.getElementById("prodImagen").value = "";
+      document.getElementById("prodCategoria").value = "";
+    } else {
+      document.getElementById("modalTitle").textContent = "Editar Producto";
+      const p = products[index];
+      document.getElementById("prodNombre").value = p.nombre;
+      document.getElementById("prodPrecio").value = p.precio;
+      document.getElementById("prodImagen").value = p.imagen || "";
+      document.getElementById("prodCategoria").value = p.categoria || "";
+    }
+    document.getElementById("adminModal").style.display = "block";
+  }
+
+  function closeAdminModal() {
+    document.getElementById("adminModal").style.display = "none";
+  }
+
+  function saveProduct() {
+    const nombre = document.getElementById("prodNombre").value;
+    const precio = parseFloat(document.getElementById("prodPrecio").value);
+    const imagen = document.getElementById("prodImagen").value;
+    const categoria = document.getElementById("prodCategoria").value;
+
+    if (!nombre || !precio) {
+      alert("Nombre y precio son obligatorios");
+      return;
+    }
+
+    if (editingIndex === -1) {
+      products.push({ nombre, precio, imagen, categoria });
+    } else {
+      products[editingIndex] = { nombre, precio, imagen, categoria };
+    }
+
+    closeAdminModal();
+    renderProducts();
+  }
+
+  function deleteProduct(index) {
+    if (confirm("¿Eliminar este producto?")) {
+      products.splice(index, 1);
+      renderProducts();
+    }
+  }
+
   function openPurchaseForm(index) {
-    if (products.length === 0) return alert("No hay productos disponibles todavía.");
-    currentProductIndex = index;
-    document.getElementById("selectedProductInfo").innerHTML = `<strong>Producto:</strong> ${products[index].nombre} - ${products[index].precio}€`;
+    const p = products[index];
+    document.getElementById("selectedProductInfo").innerHTML = `<strong>${p.nombre}</strong> - ${p.precio.toFixed(2)} €`;
+    editingIndex = index; // reutilizamos variable
     document.getElementById("purchaseModal").style.display = "block";
+  }
+
+  function closePurchaseModal() {
+    document.getElementById("purchaseModal").style.display = "none";
   }
 
   function submitPurchase() {
     const name = document.getElementById("customerName").value;
     const email = document.getElementById("customerEmail").value;
-    const message = document.getElementById("customerMessage").value;
+    const message = document.getElementById("customerMessage").value || "Sin comentarios";
 
     if (!name || !email) {
       alert("Nombre y correo son obligatorios");
       return;
     }
 
-    console.log("%c NUEVA COMPRA RECIBIDA", "color:cyan; font-size:16px");
+    console.log("%c NUEVA COMPRA RECIBIDA", "color:cyan; font-size:18px");
     console.log("Nombre:", name);
     console.log("Correo:", email);
+    console.log("Producto:", products[editingIndex]);
     console.log("Mensaje:", message);
-    console.log("Producto:", products[currentProductIndex]);
 
-    alert(`✅ Pedido enviado correctamente!\nNos pondremos en contacto contigo pronto, ${name}.`);
+    alert(`✅ Pedido recibido!\nGracias ${name}, nos pondremos en contacto pronto.`);
 
-    closeModal();
-    cart = [];
-    document.getElementById("cart-count").innerText = 0;
-  }
-
-  function closeModal() {
-    document.getElementById("purchaseModal").style.display = "none";
-  }
-
-  function changeSection(sec) {
-    renderProducts();
+    closePurchaseModal();
   }
 
   // Iniciar
   renderProducts();
 </script>
-
 </body>
 </html>
